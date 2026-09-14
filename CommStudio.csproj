@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{7D1A11F3-3F20-4AEF-8E91-C61F3698D561}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>CommStudio</RootNamespace>
+    <AssemblyName>CommStudio</AssemblyName>
+    <ApplicationIcon>assets\CommStudio.ico</ApplicationIcon>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="MQTTnet"><HintPath>vendor\MQTTnet\MQTTnet.dll</HintPath><Private>False</Private></Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="ByteCodec.cs" />
+    <Compile Include="CommandRowControl.cs" />
+    <Compile Include="LogRichTextBox.cs" />
+    <Compile Include="MainForm.cs" />
+    <Compile Include="ConnectionPanel.cs" />
+    <Compile Include="SerialBaudControl.cs" />
+    <Compile Include="Models.cs" />
+    <Compile Include="MqttProfiles.cs" />
+    <Compile Include="MqttProfilesControl.cs" />
+    <Compile Include="EmbeddedDependencies.cs" />
+    <Compile Include="MqttSession.cs" />
+    <Compile Include="MqttWorkspaceControl.cs" />
+    <Compile Include="MqttLogControl.cs" />
+    <Compile Include="MqttFilter.cs" />
+    <Compile Include="MqttPayloadTextBox.cs" />
+    <Compile Include="MqttHistoryStore.cs" />
+    <Compile Include="JsonMessageTextBox.cs" />
+    <Compile Include="SavedMqttMessages.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="SettingsStore.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="assets\CommStudio-source.png" />
+    <None Include="assets\CommStudio.png" />
+    <None Include="assets\CommStudio.ico" />
+    <EmbeddedResource Include="vendor\MQTTnet\MQTTnet.dll"><LogicalName>CommStudio.MQTTnet.dll</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="vendor\MQTTnet\LICENSE.txt"><LogicalName>CommStudio.MQTTnet.LICENSE.txt</LogicalName></EmbeddedResource>
+  </ItemGroup>
+</Project>

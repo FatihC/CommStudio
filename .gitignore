@@ -1,0 +1,25 @@
+# Build and test output
+[Bb]in/
+[Oo]bj/
+/dist/
+*.pdb
+
+# Local IDE and agent state
+.vs/
+.idea/
+*.user
+*.suo
+/.agents/
+/.codex/
+
+# Local settings and credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pfx
+*.p12
+
+# OS metadata
+Thumbs.db
+.DS_Store
