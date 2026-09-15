@@ -38,6 +38,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="ApplicationMenu.cs" />
+    <Compile Include="ApplicationUpdates.cs" />
+    <Compile Include="UpdateService.cs" />
+    <Compile Include="UpdateForm.cs" />
+    <Compile Include="AboutForm.cs" />
     <Compile Include="ByteCodec.cs" />
     <Compile Include="CommandRowControl.cs" />
     <Compile Include="LogRichTextBox.cs" />
@@ -63,6 +68,8 @@
     <None Include="assets\CommStudio-source.png" />
     <None Include="assets\CommStudio.png" />
     <None Include="assets\CommStudio.ico" />
+    <EmbeddedResource Include="assets\CommStudio.ico"><LogicalName>CommStudio.Icon</LogicalName></EmbeddedResource>
+    <EmbeddedResource Include="assets\CommStudio.png"><LogicalName>CommStudio.Logo</LogicalName></EmbeddedResource>
     <EmbeddedResource Include="vendor\MQTTnet\MQTTnet.dll"><LogicalName>CommStudio.MQTTnet.dll</LogicalName></EmbeddedResource>
     <EmbeddedResource Include="vendor\MQTTnet\LICENSE.txt"><LogicalName>CommStudio.MQTTnet.LICENSE.txt</LogicalName></EmbeddedResource>
   </ItemGroup>

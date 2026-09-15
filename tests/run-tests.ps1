@@ -17,6 +17,9 @@ if ($LASTEXITCODE -ne 0) { throw "UI smoke test compilation failed." }
 
 Push-Location (Join-Path $PSScriptRoot "..")
 try {
+    & "$PSScriptRoot\run-update-tests.ps1"
+    if ($LASTEXITCODE -ne 0) { throw "Update tests failed." }
+
     & "$testOutput\UiSmokeTests.exe"
     if ($LASTEXITCODE -ne 0) { throw "UI smoke test failed." }
 

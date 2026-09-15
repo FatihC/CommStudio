@@ -91,6 +91,40 @@ Dark mode uses neutral grays inspired by Notepad++, with lighter gray log and co
 
 Light mode uses a shared light gray background for the window and panels, white log and input fields, and subtle separators instead of outer panel frames.
 
+## Updates and publishing
+
+### Using updates
+
+- CommStudio checks `FatihC/CommStudio` on GitHub after the main window opens. It checks published, stable Releases; drafts, prereleases and older versions are not installed.
+- Open the hamburger menu and choose **Güncellemeleri kontrol et** to check manually. Successful checks are cached for one minute in the current session to limit repeated requests. When a newer version is known, the menu shows **Güncelle: version**.
+- **Daha sonra** leaves the current session running. **Güncelle ve yeniden başlat** downloads the complete EXE with progress and an **İptal** action. Cancelling or a failed download leaves the existing EXE intact.
+- Before closing, the app verifies the downloaded byte count, GitHub's SHA-256 asset digest, the assembly name and the embedded version. The download has a ten-minute overall deadline; opening never waits for the network, and startup check failures stay quiet. Manual check failures show an explanation.
+- Settings are saved and connections are closed through the normal shutdown path. A temporary copy of the current EXE acts as the updater after the main process exits. It replaces the EXE at its original path and starts the new version, including when the user has renamed the EXE or its path contains spaces. Connections do not automatically reconnect after restart.
+- The EXE folder must be writable, as Desktop and Downloads normally are. Read-only or protected folders fail with an explanation; the app does not request elevation. Close other copies of the same EXE before updating.
+- Update downloads, the helper and the previous EXE are staged under `%LOCALAPPDATA%\CommStudio\updates`. A replacement candidate is briefly created beside the target EXE so replacement works even when the target is on a different drive. If launching the replacement fails, the updater restores the previous EXE. A successful new window opening triggers cleanup. A crash before the new window opens leaves `previous.exe` in the staging folder for manual recovery; this is not a general crash-detection or data-migration rollback system.
+- SHA-256 detects corruption against GitHub's published digest. It is not an independent publisher signature. Releases rely on HTTPS and control of the repository; the application never contains a GitHub token.
+
+Settings, MQTT profiles, saved messages and history remain in their existing locations. Updating the EXE does not migrate or remove them.
+
+### Publishing from GitHub
+
+1. Commit and push the implementation and workflow to the repository's default branch.
+2. Push a new, increasing tag such as `v0.2.0` (then `v0.2.1`, `v0.3.0`, etc.). The supported stable format is exactly `vMAJOR.MINOR.PATCH`, with components from 0 through 65534.
+3. The **Publish Windows release** workflow builds the EXE with the tag's version and runs the test suite on Windows.
+4. It creates a draft Release with `CommStudio.exe` and `SHA256SUMS.txt`, verifies the uploaded EXE's SHA-256 digest, then publishes it as the latest version. Users only see the Release after verification.
+
+GitHub Actions uses its built-in `GITHUB_TOKEN` with repository contents write permission. No separately hosted service or custom secret is needed. Actions must be enabled in the repository. Pushing a tag without this workflow does not produce an EXE; regular code pushes do not publish a release. Start a new tag for each published version; the workflow refuses to overwrite an existing published Release. If an upload fails, the Release remains a draft and rerunning the workflow can finish it.
+
+For a local build matching a future tag:
+
+```powershell
+.\build.ps1 -ReleaseVersion v0.2.1
+```
+
+This generates version attributes in the output directory without editing `AssemblyInfo.cs`. A build without `-ReleaseVersion` uses `AssemblyInfo.cs`; keep that development version current when preparing subsequent work. The `.csproj` build also uses `AssemblyInfo.cs`. The first update-capable EXE must be downloaded once; versions without this feature cannot discover it automatically.
+
+Run the focused offline update tests with `./tests/run-update-tests.ps1`. They cover version selection, unsafe or incomplete Release metadata, checksum/version verification, replacing an EXE after its running process exits, restarting at a renamed path with spaces, rollback on launch failure, locked targets, and both dialog themes. The full `./tests/run-tests.ps1` suite includes these tests. Live Release publication and downloads require an actual published GitHub release.
+
 ## Build
 
 Run the included PowerShell script:

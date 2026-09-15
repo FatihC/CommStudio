@@ -165,6 +165,7 @@ internal static class UiSmokeTests
                 foreach (bool darkPreview in new bool[] { false, true })
                 {
                     setDarkMode.Invoke(form, new object[] { darkPreview });
+                    CheckApplicationMenu(form, formType, darkPreview);
                     using (Bitmap preview = new Bitmap(form.Width, form.Height))
                     {
                         form.DrawToBitmap(preview, new Rectangle(Point.Empty, form.Size));
@@ -187,6 +188,8 @@ internal static class UiSmokeTests
                 {
                     form.Size = size;
                     PumpFor(TimeSpan.FromMilliseconds(100));
+                    Assert(themeButton.Right <= themeButton.Parent.ClientSize.Width,
+                        "header actions fit at minimum width with the application menu");
                     foreach (bool darkPreview in new bool[] { false, true })
                     {
                         setDarkMode.Invoke(form, new object[] { darkPreview });
@@ -228,6 +231,57 @@ internal static class UiSmokeTests
             exitCode = 1;
             Console.Error.WriteLine("FAIL UI smoke test: " + exception);
         }
+    }
+
+    private static void CheckApplicationMenu(Form owner, Type formType, bool dark)
+    {
+        Button button = (Button)formType.GetField("applicationMenuButton", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(owner);
+        ContextMenuStrip menu = (ContextMenuStrip)formType.GetField("applicationMenu", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(owner);
+        Assert(button.Visible && button.Width >= 28, "compact application menu button is visible");
+        button.PerformClick();
+        Application.DoEvents();
+        Assert(menu.Visible && menu.Items.Count == 2 && menu.Items[0].Name == "aboutMenuItem"
+            && menu.Items[1].Name == "updateMenuItem" && menu.Items[1].Enabled,
+            "hamburger opens About and update checks");
+        Assert(dark ? menu.BackColor.R < 80 : menu.BackColor.R > 200, "application menu follows theme");
+        menu.Close();
+        Exception failure = null;
+        bool opened = false;
+        using (System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer { Interval = 100 })
+        {
+            timer.Tick += delegate
+            {
+                Form dialog = null;
+                foreach (Form candidate in Application.OpenForms)
+                    if (candidate.Name == "aboutForm") { dialog = candidate; break; }
+                if (dialog != null && !dialog.Visible) return;
+                timer.Stop();
+                try
+                {
+                    Assert(dialog != null && dialog.Modal && dialog.Owner == owner, "About opens as an owned modal dialog");
+                    opened = true;
+                    Assert(dark ? dialog.BackColor.R < 80 : dialog.BackColor.R > 200, "About follows theme");
+                    Assert(dialog.Controls.Find("developerLabel", true)[0].Text == "Fatih Coşkun", "developer credit");
+                    Assert(dialog.Controls.Find("versionLabel", true)[0].Text.Contains(formType.Assembly.GetName().Version.ToString(3)), "version comes from assembly");
+                    LinkLabel link = (LinkLabel)dialog.Controls.Find("repositoryLink", true)[0];
+                    Assert((string)link.Links[0].LinkData == "https://github.com/FatihC/CommStudio", "repository link target");
+                    using (Bitmap preview = new Bitmap(dialog.Width, dialog.Height))
+                    {
+                        dialog.DrawToBitmap(preview, new Rectangle(Point.Empty, dialog.Size));
+                        preview.Save("tests\\bin\\about-" + (dark ? "dark" : "light") + ".png", ImageFormat.Png);
+                    }
+                    typeof(Form).GetMethod("ProcessDialogKey", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .Invoke(dialog, new object[] { dark ? Keys.Escape : Keys.Enter });
+                    Assert(dialog.DialogResult != DialogResult.None, "Enter and Escape dismiss About");
+                }
+                catch (Exception exception) { failure = exception; }
+                finally { if (dialog != null && dialog.Visible) dialog.Close(); }
+            };
+            timer.Start();
+            ((ToolStripMenuItem)menu.Items[0]).PerformClick();
+        }
+        if (failure != null) throw failure;
+        Assert(opened && owner.Visible, "main workspace remains open after About closes");
     }
 
     private static void Assert(bool condition, string name)

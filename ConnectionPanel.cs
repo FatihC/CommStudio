@@ -50,10 +50,10 @@ namespace CommStudio
             header.ColumnCount = 6;
             header.RowCount = 1;
             header.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-            header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 128F));
+            header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160F));
             header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 222F));
             header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 114F));
+            header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100F));
             header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 104F));
             header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 94F));
             Label title = new Label { Text = "CommStudio", Dock = DockStyle.Fill,
@@ -65,7 +65,13 @@ namespace CommStudio
             connectButton.Click += async delegate { await ToggleConnectionAsync(); };
             themeButton = CreateHeaderButton("Dark mode");
             themeButton.Click += delegate { SetDarkMode(!isDarkMode); };
-            header.Controls.Add(title, 0, 0);
+            TableLayoutPanel brand = new TableLayoutPanel { Dock = DockStyle.Fill, Margin = Padding.Empty,
+                ColumnCount = 2, RowCount = 1 };
+            brand.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 32F));
+            brand.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            brand.Controls.Add(BuildApplicationMenuButton(), 0, 0);
+            brand.Controls.Add(title, 1, 0);
+            header.Controls.Add(brand, 0, 0);
             header.Controls.Add(statusLabel, 3, 0);
             header.Controls.Add(connectButton, 4, 0);
             header.Controls.Add(themeButton, 5, 0);

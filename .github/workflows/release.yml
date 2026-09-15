@@ -1,0 +1,58 @@
+name: Publish Windows release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build with the tag version
+        run: ./build.ps1 -ReleaseVersion $env:GITHUB_REF_NAME
+      - name: Test
+        run: ./tests/run-tests.ps1
+      - name: Publish verified EXE
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          $expected = $tag.TrimStart('v') + '.0'
+          $actual = [Reflection.AssemblyName]::GetAssemblyName((Resolve-Path ./dist/CommStudio.exe)).Version.ToString()
+          if ($actual -ne $expected) { throw "EXE version $actual does not match $tag" }
+          $hash = (Get-FileHash ./dist/CommStudio.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  CommStudio.exe" | Set-Content ./dist/SHA256SUMS.txt -Encoding ascii
+
+          # Keep incomplete uploads invisible to clients. Published releases are never overwritten.
+          $existing = gh release view $tag --json isDraft 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            if (-not ($existing | ConvertFrom-Json).isDraft) { throw "Release $tag is already published; use a new tag." }
+            gh release upload $tag ./dist/CommStudio.exe ./dist/SHA256SUMS.txt --clobber
+          } else {
+            gh release create $tag ./dist/CommStudio.exe ./dist/SHA256SUMS.txt --verify-tag --draft --title "CommStudio $tag" --generate-notes
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed.' }
+
+          $metadata = gh api "repos/$env:GH_REPO/releases/tags/$tag"
+          if ($LASTEXITCODE -ne 0) { throw 'Could not verify uploaded release.' }
+          $asset = ($metadata | ConvertFrom-Json).assets | Where-Object name -eq 'CommStudio.exe'
+          if ($asset.digest -ne "sha256:$hash") { throw 'GitHub asset digest does not match the built EXE. Retry the workflow after GitHub finishes processing.' }
+          gh release edit $tag --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed.' }

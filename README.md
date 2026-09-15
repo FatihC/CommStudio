@@ -58,4 +58,19 @@ History persists per connection, including filtered-out messages. **Clear** dele
 
 Use **Word wrap**, draggable dividers and **Dark mode / Light mode** to adjust the workspace. For the TCP/serial log, **Ctrl+mouse wheel** or **Ctrl++ / Ctrl+-** changes font size; **Ctrl+0** resets it.
 
+The hamburger button to the left of **CommStudio** opens the application menu. Choose **Hakkında** for the version, a short introduction, developer credit and GitHub repository. The dialog follows the current theme; **Esc**, **Enter** or **Kapat** closes it.
+
+CommStudio checks the public GitHub Releases feed after opening. Use **Güncellemeleri kontrol et** in the same menu to check while working. **Güncelle ve yeniden başlat** downloads and verifies the new EXE, closes connections, and reopens the updated app at the same path. No installer, GitHub login or separate update server is required. See [updates and publishing](USER_GUIDE.md#updates-and-publishing).
+
 Settings, MQTT profiles, histories and saved messages live under `%LOCALAPPDATA%\CommStudio`. Profile passwords use Windows encryption for the current user; saved publish messages are plaintext. See the [full guide](USER_GUIDE.md) for storage files, filter semantics, protocol limits and build/test options.
+
+## Publish a version
+
+Commit and push changes (including `.github/workflows/release.yml`) to the default branch, then push a new version tag, for example:
+
+```powershell
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+GitHub Actions embeds the tag's version in the EXE, runs the tests, uploads `CommStudio.exe` and `SHA256SUMS.txt` to a draft Release, verifies GitHub's asset digest, then publishes it. Use a new, increasing `vMAJOR.MINOR.PATCH` tag for each release; ordinary branch pushes do not publish updates. No personal access token is stored in the app. Existing users need the first update-capable version once; subsequent releases can be installed in the app.

@@ -961,6 +961,7 @@ namespace CommStudio
                 : Color.FromArgb(60, 60, 60);
 
             ApplyContextMenuTheme(surface, primaryText);
+            ApplyApplicationMenuTheme(surface, primaryText);
             UpdateConnectionUi();
             ApplyNativeTitleBarTheme();
             RerenderLog();

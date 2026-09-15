@@ -1,4 +1,7 @@
-param([string]$OutputDirectory = (Join-Path $PSScriptRoot "dist"))
+param(
+    [string]$OutputDirectory = (Join-Path $PSScriptRoot "dist"),
+    [string]$ReleaseVersion
+)
 $ErrorActionPreference = "Stop"
 
 $compiler = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
@@ -8,6 +11,21 @@ if (-not (Test-Path -LiteralPath $compiler)) {
 
 $outputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Force -Path $outputDirectory | Out-Null
+$assemblyInfo = Join-Path $PSScriptRoot "AssemblyInfo.cs"
+if ($ReleaseVersion) {
+    if ($ReleaseVersion -cnotmatch '\Av?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\z') {
+        throw "ReleaseVersion must have the form v1.2.3 or 1.2.3."
+    }
+    $normalizedVersion = $ReleaseVersion.TrimStart('v')
+    foreach ($part in $normalizedVersion.Split('.')) {
+        if ([long]$part -gt 65534) { throw "Version components must not exceed 65534." }
+    }
+    $versionSource = [IO.File]::ReadAllText($assemblyInfo)
+    $versionSource = $versionSource -replace 'AssemblyVersion\("[^"]+"\)', "AssemblyVersion(`"$normalizedVersion.0`")"
+    $versionSource = $versionSource -replace 'AssemblyFileVersion\("[^"]+"\)', "AssemblyFileVersion(`"$normalizedVersion.0`")"
+    $assemblyInfo = Join-Path $outputDirectory "ReleaseAssemblyInfo.cs"
+    [IO.File]::WriteAllText($assemblyInfo, $versionSource, [Text.UTF8Encoding]::new($true))
+}
 $icon = Join-Path $PSScriptRoot "assets\CommStudio.ico"
 if (-not (Test-Path -LiteralPath $icon)) {
     throw "The application icon is missing. Run .\tools\generate-icon.ps1 first."
@@ -27,9 +45,16 @@ if (-not (Test-Path -LiteralPath $icon)) {
     /reference:System.Security.dll `
     /reference:System.Windows.Forms.dll `
     /reference:"$PSScriptRoot\vendor\MQTTnet\MQTTnet.dll" `
+    "/resource:$PSScriptRoot\assets\CommStudio.ico,CommStudio.Icon" `
+    "/resource:$PSScriptRoot\assets\CommStudio.png,CommStudio.Logo" `
     "/resource:$PSScriptRoot\vendor\MQTTnet\MQTTnet.dll,CommStudio.MQTTnet.dll" `
     "/resource:$PSScriptRoot\vendor\MQTTnet\LICENSE.txt,CommStudio.MQTTnet.LICENSE.txt" `
-    "$PSScriptRoot\AssemblyInfo.cs" `
+    "$assemblyInfo" `
+    "$PSScriptRoot\ApplicationMenu.cs" `
+    "$PSScriptRoot\ApplicationUpdates.cs" `
+    "$PSScriptRoot\UpdateService.cs" `
+    "$PSScriptRoot\UpdateForm.cs" `
+    "$PSScriptRoot\AboutForm.cs" `
     "$PSScriptRoot\ByteCodec.cs" `
     "$PSScriptRoot\CommandRowControl.cs" `
     "$PSScriptRoot\LogRichTextBox.cs" `
