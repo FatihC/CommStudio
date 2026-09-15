@@ -113,7 +113,7 @@ Settings, MQTT profiles, saved messages and history remain in their existing loc
 3. The **Publish Windows release** workflow builds the EXE with the tag's version and runs the test suite on Windows.
 4. It creates a draft Release with `CommStudio.exe` and `SHA256SUMS.txt`, verifies the uploaded EXE's SHA-256 digest, then publishes it as the latest version. Users only see the Release after verification.
 
-GitHub Actions uses its built-in `GITHUB_TOKEN` with repository contents write permission. No separately hosted service or custom secret is needed. Actions must be enabled in the repository. Pushing a tag without this workflow does not produce an EXE; regular code pushes do not publish a release. Start a new tag for each published version; the workflow refuses to overwrite an existing published Release. If an upload fails, the Release remains a draft and rerunning the workflow can finish it.
+GitHub Actions uses its built-in `GITHUB_TOKEN` with repository contents write permission. No separately hosted service or custom secret is needed. Actions must be enabled in the repository. Pushing a tag without this workflow does not produce an EXE; regular code pushes do not publish a release. Start a new tag for each published version; the workflow refuses to overwrite an existing published Release. If an upload fails, the Release remains a draft and rerunning the workflow can finish it. After a workflow fix, use **Actions → Publish Windows release → Run workflow** on the default branch and enter the original tag in `release_tag`. This uses the corrected publishing workflow while building the source at the original tag, without moving that tag.
 
 For a local build matching a future tag:
 

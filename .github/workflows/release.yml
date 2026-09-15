@@ -4,18 +4,26 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing version tag to publish or resume
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.release_tag || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
   release:
     runs-on: windows-latest
     timeout-minutes: 15
+    env:
+      RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
     defaults:
       run:
         shell: pwsh
@@ -23,8 +31,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          ref: refs/tags/${{ inputs.release_tag || github.ref_name }}
       - name: Build with the tag version
-        run: ./build.ps1 -ReleaseVersion $env:GITHUB_REF_NAME
+        run: ./build.ps1 -ReleaseVersion $env:RELEASE_TAG
       - name: Test
         run: ./tests/run-tests.ps1
       - name: Publish verified EXE
@@ -33,7 +42,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $tag = $env:GITHUB_REF_NAME
+          $tag = $env:RELEASE_TAG
           $expected = $tag.TrimStart('v') + '.0'
           $actual = [Reflection.AssemblyName]::GetAssemblyName((Resolve-Path ./dist/CommStudio.exe)).Version.ToString()
           if ($actual -ne $expected) { throw "EXE version $actual does not match $tag" }
@@ -50,7 +59,10 @@ jobs:
           }
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed.' }
 
-          $metadata = gh api "repos/$env:GH_REPO/releases/tags/$tag"
+          # The REST lookup by tag excludes drafts. Resolve the draft ID via the CLI first.
+          $releaseId = gh release view $tag --json databaseId --jq '.databaseId'
+          if ($LASTEXITCODE -ne 0) { throw 'Could not locate uploaded draft release.' }
+          $metadata = gh api "repos/$env:GH_REPO/releases/$releaseId"
           if ($LASTEXITCODE -ne 0) { throw 'Could not verify uploaded release.' }
           $asset = ($metadata | ConvertFrom-Json).assets | Where-Object name -eq 'CommStudio.exe'
           if ($asset.digest -ne "sha256:$hash") { throw 'GitHub asset digest does not match the built EXE. Retry the workflow after GitHub finishes processing.' }
